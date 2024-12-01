@@ -22,12 +22,12 @@ def connect_to_cluster(context: str = None):
     except HTTPException as e:
         raise e
 
-@app.post("/install")
+@app.get("/install")
 def install_dependencies(
-    hpa: bool = Query(False), metric_server: bool = Query(False), keda: bool = Query(False)
+    metric_server: bool = Query(False), keda: bool = Query(False), remoteValues = Query(None), values = Query(None)
 ):
     try:
-        return controller.install_dependencies(hpa, metric_server, keda)
+        return controller.install_dependencies(metric_server, keda, remoteValues, values)
     except HTTPException as e:
         raise e
 
@@ -40,34 +40,25 @@ def verify_dependencies():
         raise e
 
 
-@app.post("/deploy")
+@app.get("/deploy")
 def deploy_application(
     namespace: str,
     image_name: str,
     version: str,
-    port: int,
-    scale_metric: str = Query("cpu,memory"),
+    port: int
 ):
     try:
-        return controller.deploy_application(namespace, image_name, version, port, scale_metric)
+        return controller.deploy_application(namespace, image_name, version, port)
     except HTTPException as e:
         raise e
 
 
-@app.post("/autoscale")
+@app.get("/autoscale")
 def apply_autoscaling(
-    namespace: str, deployment: str = None, scale_metric: str = Query("cpu,memory")
+    namespace: str, deployment: str = None
 ):
     try:
-        return controller.apply_autoscaling(namespace, deployment, scale_metric)
-    except HTTPException as e:
-        raise e
-
-
-@app.post("/pause")
-def pause_autoscaling(namespace: str, deployment: str = None):
-    try:
-        return controller.pause_autoscaling(namespace, deployment)
+        return controller.apply_autoscaling(namespace, deployment)
     except HTTPException as e:
         raise e
 

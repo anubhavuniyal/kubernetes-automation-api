@@ -11,8 +11,8 @@ class KubernetesController:
     def list_contexts(self):
         return self.cluster.get_contexts()
 
-    def install_dependencies(self, metric_server, keda):
-        return self.cluster.install_dependencies(metric_server, keda)
+    def install_dependencies(self, metric_server, keda, remoteValues, values):
+        return self.cluster.install_dependencies(metric_server, keda, remoteValues, values)
 
     def verify_installation(self):
         return self.cluster.verify_installation()
@@ -22,9 +22,6 @@ class KubernetesController:
 
     def apply_autoscaling(self, namespace, deployment, scale_metric):
         return self.cluster.autoscale_deployment(namespace, deployment, scale_metric)
-
-    def pause_autoscaling(self, namespace, deployment):
-        return self.cluster.pause_autoscale(namespace, deployment)
 
     def get_deployment_status(self, namespace, deployment):
         return self.cluster.get_status(namespace, deployment)
