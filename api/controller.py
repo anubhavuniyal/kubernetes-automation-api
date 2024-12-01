@@ -17,11 +17,8 @@ class KubernetesController:
     def verify_installation(self):
         return self.cluster.verify_installation()
 
-    def deploy_application(self, namespace, image_name, version, port, scale_metric):
-        return self.cluster.deploy_image(namespace, image_name, version, port, scale_metric)
-
-    def apply_autoscaling(self, namespace, deployment, scale_metric):
-        return self.cluster.autoscale_deployment(namespace, deployment, scale_metric)
+    def deploy_application(self, namespace, image_name, version, port):
+        return self.cluster.deploy_image(namespace, image_name, version, port)
 
     def get_deployment_status(self, namespace, deployment):
         return self.cluster.get_status(namespace, deployment)

@@ -53,17 +53,6 @@ def deploy_application(
     except HTTPException as e:
         raise e
 
-
-@app.get("/autoscale")
-def apply_autoscaling(
-    namespace: str, deployment: str = None
-):
-    try:
-        return controller.apply_autoscaling(namespace, deployment)
-    except HTTPException as e:
-        raise e
-
-
 @app.get("/status")
 def get_status(namespace: str, deployment: str = None):
     try:
