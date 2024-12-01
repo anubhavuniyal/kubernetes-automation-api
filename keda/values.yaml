@@ -1,0 +1,62 @@
+clusterName: simplismart-cluster
+clusterDomain: cluster.local
+
+operator:
+  replicaCount: 3
+  # affinity:
+  #    podAntiAffinity:
+  #      requiredDuringSchedulingIgnoredDuringExecution:
+  #      - labelSelector:
+  #          matchExpressions:
+  #          - key: app
+  #            operator: In
+  #            values:
+  #            - keda-operator
+  #        topologyKey: "kubernetes.io/hostname"
+
+metricsServer:
+  revisionHistoryLimit: 10
+  replicaCount: 3
+  # affinity: 
+  #    podAntiAffinity:
+  #      requiredDuringSchedulingIgnoredDuringExecution:
+  #      - labelSelector:
+  #          matchExpressions:
+  #          - key: app
+  #            operator: In
+  #            values:
+  #            - keda-operator-metrics-apiserver
+  #        topologyKey: "kubernetes.io/hostname"
+
+webhooks:
+  replicaCount: 3
+  # affinity:
+  #    podAntiAffinity:
+  #      requiredDuringSchedulingIgnoredDuringExecution:
+  #      - labelSelector:
+  #          matchExpressions:
+  #          - key: app
+  #            operator: In
+  #            values:
+  #            - keda-admission-webhooks
+  #        topologyKey: "kubernetes.io/hostname"
+
+upgradeStrategy:
+  operator: 
+     type: RollingUpdate
+
+  metricsApiServer:
+     type: RollingUpdate
+
+  webhooks: 
+     type: RollingUpdate
+
+podDisruptionBudget:
+  operator: 
+      maxUnavailable: 2
+
+  metricServer: 
+      maxUnavailable: 2
+
+  webhooks: 
+     maxUnavailable: 2
