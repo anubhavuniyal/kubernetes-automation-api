@@ -7,6 +7,8 @@ pkgs.mkShellNoCC {
       python312Packages.pip
       python312Packages.kubernetes
       python312Packages.fastapi
+      pipreqs
+      python312Packages.autopep8
   ];
 
 }

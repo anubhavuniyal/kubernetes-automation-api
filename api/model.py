@@ -30,7 +30,8 @@ class KubernetesCluster:
             self.autoscaling_v1 = client.AutoscalingV1Api(self.api_client)
             self.custom_api = client.CustomObjectsApi()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to connect to the cluster: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to connect to the cluster: {str(e)}")
 
     def get_contexts(self):
         """
@@ -40,7 +41,8 @@ class KubernetesCluster:
             contexts, _ = config.list_kube_config_contexts()
             return [ctx["name"] for ctx in contexts]
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error fetching contexts: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error fetching contexts: {str(e)}")
 
     def install_dependencies(self, metric_server, keda, remoteValues, values):
         """
@@ -50,10 +52,12 @@ class KubernetesCluster:
 
         if metric_server:
             try:
-                self.apply_yaml_from_url("https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml")
+                self.apply_yaml_from_url(
+                    "https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml")
                 results.append("Metrics Server installed successfully.")
             except ApiException as e:
-                raise HTTPException(status_code=500, detail=f"Failed to install Metrics Server: {e.body}")
+                raise HTTPException(
+                    status_code=500, detail=f"Failed to install Metrics Server: {e.body}")
 
         if keda:
             try:
@@ -67,10 +71,11 @@ class KubernetesCluster:
                 )
                 results.append("KEDA installed successfully.")
             except ApiException as e:
-                raise HTTPException(status_code=500, detail=f"Failed to install KEDA: {e.body}")
+                raise HTTPException(
+                    status_code=500, detail=f"Failed to install KEDA: {e.body}")
 
         return {"installed": results}
-    
+
     def apply_yaml_from_url(self, url: str):
         """
         Applies a Kubernetes manifest from a remote URL.
@@ -80,7 +85,8 @@ class KubernetesCluster:
             response = requests.get(url)
             response.raise_for_status()
         except requests.RequestException as e:
-            raise HTTPException(status_code=500, detail=f"Failed to fetch YAML from URL: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to fetch YAML from URL: {e}")
 
         # Save YAML content to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".yaml") as temp_file:
@@ -91,37 +97,38 @@ class KubernetesCluster:
             # Apply the YAML using Kubernetes Python client
             create_from_yaml(self.api_client, temp_file_path)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to apply Kubernetes manifest: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to apply Kubernetes manifest: {e}")
         finally:
             # Clean up the temporary file
             args = ('rm', temp_file_path)
             subprocess.call('%s %s' % args, shell=True)
-    
-    def get_github_raw_content(self,url: str):
+
+    def get_github_raw_content(self, url: str):
         """
         Fetch raw content from a GitHub URL (whether direct raw or parsed from a GitHub page URL).
-        
+
         :param url: GitHub URL (raw or page URL)
         :return: Content of the file (str)
         """
         raw_url = url
         # Convert the GitHub URL to raw format if it's not already raw
         if url.startswith("https://github.com"):
-            raw_url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob", "")
-        
+            raw_url = url.replace(
+                "github.com", "raw.githubusercontent.com").replace("/blob", "")
+
         try:
             # Send a GET request to the raw GitHub file URL
             response = requests.get(raw_url)
-            
+
             # Check if the request was successful
             response.raise_for_status()
-            
+
             # Return the content of the file
             return response.text
         except requests.exceptions.RequestException as e:
             print(f"Error fetching file: {e}")
             return None
-
 
     def install_chart(self, release_name: str, chart_name: str, chart_url: str, namespace: str = "default", values: dict = None, remoteValues: str = None):
         """
@@ -134,12 +141,14 @@ class KubernetesCluster:
         """
         try:
             # Add repo and update
-            cmd = [self.helm_executable, "repo", "add", release_name, chart_url]
+            cmd = [self.helm_executable, "repo",
+                   "add", release_name, chart_url]
             subprocess.run(cmd, capture_output=True, text=True, check=True)
             cmd = [self.helm_executable, "repo", "update", release_name]
             subprocess.run(cmd, capture_output=True, text=True, check=True)
             # Prepare the Helm command
-            cmd = [self.helm_executable, "upgrade", "--install", release_name, f"{release_name}/{chart_name}", "--namespace", namespace, "--create-namespace"]
+            cmd = [self.helm_executable, "upgrade", "--install", release_name,
+                   f"{release_name}/{chart_name}", "--namespace", namespace, "--create-namespace"]
 
             # Add custom values if provided
             if remoteValues:
@@ -150,18 +159,19 @@ class KubernetesCluster:
                     cmd.extend(["--set", f"{key}={value}"])
 
             # Run the Helm command
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=True)
             return {"message": result.stdout.strip()}
         except subprocess.CalledProcessError as e:
-            raise HTTPException(status_code=500, detail=f"Helm command failed: {e.stderr.strip()}")
+            raise HTTPException(
+                status_code=500, detail=f"Helm command failed: {e.stderr.strip()}")
 
-
-    def check_deployment_exists(self,namespace, name):
-            try:
-                self.apps_v1.read_namespaced_deployment(name, namespace)
-                return True
-            except ApiException:
-                return False
+    def check_deployment_exists(self, namespace, name):
+        try:
+            self.apps_v1.read_namespaced_deployment(name, namespace)
+            return True
+        except ApiException:
+            return False
 
     def verify_installation(self):
         """
@@ -222,7 +232,7 @@ class KubernetesCluster:
             "kind": "ScaledObject",
             "metadata": {"name": f"{deployment_name}-scaledobject", "namespace": namespace},
             "spec": {
-                "minReplicaCount" : 1,
+                "minReplicaCount": 1,
                 "scaleTargetRef": {
                     "name": deployment_name,
                     "kind": "Deployment",
@@ -247,17 +257,20 @@ class KubernetesCluster:
         }
 
         try:
-            self.apps_v1.create_namespaced_deployment(namespace, deployment_manifest)
+            self.apps_v1.create_namespaced_deployment(
+                namespace, deployment_manifest)
             self.core_v1.create_namespaced_service(namespace, service_manifest)
             self.custom_api.create_namespaced_custom_object(
                 group="keda.sh",           # KEDA's API group
                 version="v1alpha1",            # KEDA's API version
                 namespace=namespace,           # Namespace where the resource is created
-                plural="scaledobjects",        # Plural name of the resource (scaledobjects)
+                # Plural name of the resource (scaledobjects)
+                plural="scaledobjects",
                 body=scaled_object_manifest    # The manifest content to apply
             )
         except ApiException as e:
-            raise HTTPException(status_code=500, detail=f"Error creating deployment: {e.body}")
+            raise HTTPException(
+                status_code=500, detail=f"Error creating deployment: {e.body}")
 
         return {"message": f"Deployment {deployment_name} created successfully."}
 
@@ -267,43 +280,45 @@ class KubernetesCluster:
         """
 
         scaled_object_manifest = {
-        "apiVersion": "keda.sh/v1alpha1",
-        "kind": "ScaledObject",
-        "metadata": {"name": f"{deployment_name}-scaledobject", "namespace": namespace},
-        "spec": {
-            "minReplicaCount" : 1,
-            "scaleTargetRef": {
-                "name": deployment_name,
-                "kind": "Deployment",
-            },
-            "triggers": [
-                {
-                    "type": "cpu",
-                    "metricType": "Utilization",
-                    "metadata": {
-                        "value": "80"  # Scale when CPU exceeds 50%
-                    }
+            "apiVersion": "keda.sh/v1alpha1",
+            "kind": "ScaledObject",
+            "metadata": {"name": f"{deployment_name}-scaledobject", "namespace": namespace},
+            "spec": {
+                "minReplicaCount": 1,
+                "scaleTargetRef": {
+                    "name": deployment_name,
+                    "kind": "Deployment",
                 },
-                {
-                    "type": "memory",
-                    "metricType": "Utilization",
-                    "metadata": {
-                        "value": "80"  # Scale when memory exceeds 50%
+                "triggers": [
+                    {
+                        "type": "cpu",
+                        "metricType": "Utilization",
+                        "metadata": {
+                            "value": "80"  # Scale when CPU exceeds 50%
+                        }
+                    },
+                    {
+                        "type": "memory",
+                        "metricType": "Utilization",
+                        "metadata": {
+                            "value": "80"  # Scale when memory exceeds 50%
+                        }
                     }
-                }
-            ]
+                ]
+            }
         }
-    }
         try:
             self.custom_api.create_namespaced_custom_object(
                 group="keda.sh",           # KEDA's API group
                 version="v1alpha1",            # KEDA's API version
                 namespace=namespace,           # Namespace where the resource is created
-                plural="scaledobjects",        # Plural name of the resource (scaledobjects)
+                # Plural name of the resource (scaledobjects)
+                plural="scaledobjects",
                 body=scaled_object_manifest    # The manifest content to apply
             )
         except ApiException as e:
-            raise HTTPException(status_code=500, detail=f"Error creating HPA: {e.body}")
+            raise HTTPException(
+                status_code=500, detail=f"Error creating HPA: {e.body}")
 
         return {"message": "Autoscaling applied successfully."}
 
@@ -313,7 +328,8 @@ class KubernetesCluster:
         """
 
         if deployment:
-            deployment_obj = self.apps_v1.read_namespaced_deployment(deployment,namespace)
+            deployment_obj = self.apps_v1.read_namespaced_deployment(
+                deployment, namespace)
             return {
                 "deployment": deployment,
                 "ready_replicas": deployment_obj.status.ready_replicas,

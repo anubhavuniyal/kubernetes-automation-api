@@ -7,10 +7,10 @@ app = APIRouter()
 controller = KubernetesController()
 
 
-
 @app.get("/", include_in_schema=False)
 def docs_redirect():
     return RedirectResponse(url='/docs')
+
 
 @app.get("/connect")
 def connect_to_cluster(context: str = None):
@@ -22,9 +22,10 @@ def connect_to_cluster(context: str = None):
     except HTTPException as e:
         raise e
 
+
 @app.get("/install")
 def install_dependencies(
-    metric_server: bool = Query(False), keda: bool = Query(False), remoteValues = Query(None), values = Query(None)
+    metric_server: bool = Query(False), keda: bool = Query(False), remoteValues=Query(None), values=Query(None)
 ):
     try:
         return controller.install_dependencies(metric_server, keda, remoteValues, values)
